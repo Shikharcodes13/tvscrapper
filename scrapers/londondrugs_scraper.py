@@ -1,45 +1,32 @@
-import requests
-from bs4 import BeautifulSoup
-from config import HEADERS, DELAY
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from config import SELENIUM_CONFIG, RETAILER_URLS
 import logging
-from config import HEADERS, TIMEOUT 
+import random
+import time
+from config import DELAY  # Make sure this import exists
 
 logger = logging.getLogger(__name__)
 
-def scrape_londondrugs(product_name):
-    result = {
-        "Website": "London Drugs",
-        "Title": "",
-        "Price": "",
-        "PriceValidTill": "",
-        "error": None
-    }
+def scrape_londondrugs(product_name, driver):
+    result = {"Website": "London Drugs", "Title": "", "Price": "", "URL": "", "error": None}
     
     try:
-        query = product_name.replace(" ", "+")
-        url = f"https://www.londondrugs.com/search?q={query}"
+        url = RETAILER_URLS["londondrugs"].format(query=product_name.replace(" ", "+"))
+        driver.get(url)
         
-        response = requests.get(url, headers=HEADERS["default"], timeout=TIMEOUT)
-        response.raise_for_status()
+        product = WebDriverWait(driver, SELENIUM_CONFIG["timeout"]).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.product-tile"))
+        )
         
-        soup = BeautifulSoup(response.text, 'html.parser')
-        product = soup.find("div", class_="product-tile")
-        if not product:
-            raise Exception("No products found on search results page")
+        result["Title"] = product.find_element(By.CSS_SELECTOR, "div.product-name").text
+        result["Price"] = product.find_element(By.CSS_SELECTOR, "span.price").text
+        result["URL"] = product.find_element(By.CSS_SELECTOR, "a").get_attribute("href")
         
-        title = product.find("div", class_="product-name")
-        price = product.find("span", class_="price")
-        
-        if title:
-            result["Title"] = title.text.strip()
-        if price:
-            result["Price"] = price.text.strip()
-            
-        if not result["Title"] or not result["Price"]:
-            raise Exception("Could not extract complete product details")
-            
     except Exception as e:
-        result["error"] = f"London Drugs scraping failed: {str(e)}"
+        result["error"] = f"London Drugs error: {str(e)}"
         logger.error(result["error"])
     
+    time.sleep(random.uniform(*DELAY))
     return result
