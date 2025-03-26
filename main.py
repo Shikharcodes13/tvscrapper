@@ -4,7 +4,7 @@ import random
 from config import DELAY, RETRIES
 from scrapers.amazon_scraper import scrape_amazon
 from scrapers.bestbuy_scraper import scrape_bestbuy
-from scrapers.costco_scraper import scrape_costco  # New import
+
 from utils.error_logger import log_error
 
 # ... (keep your existing products list) ...
@@ -17,7 +17,7 @@ def main():
     success_count = 0
     failure_count = 0
 
-    costco_scraper = costco_scraper(debug_mode=False)
+    
     
     for product in products:
         name = product["name"]
@@ -33,9 +33,9 @@ def main():
         
         # List of all scraper functions to try
         scrapers = [
-            # ("Best Buy", scrape_bestbuy),
+            ("Best Buy", scrape_bestbuy),
             ("Amazon", scrape_amazon),
-            ("Costco", costco_scraper.scrape_costco)
+            
         ]
         
         for retailer_name, scraper_func in scrapers:
